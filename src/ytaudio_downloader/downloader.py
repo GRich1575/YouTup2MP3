@@ -44,7 +44,10 @@ def check_ffmpeg() -> None:
                   "(first run downloads it)...")
             static_ffmpeg.add_paths()
         except Exception as exc:  # noqa: BLE001
-            LOGGER.debug("static-ffmpeg setup failed: %s", exc)
+            LOGGER.warning(
+                "Could not set up bundled FFmpeg (offline or blocked?): %s",
+                exc,
+            )
 
     missing = [
         tool
@@ -107,7 +110,12 @@ def download_audio(url: str, output_dir: Path | str | None = None) -> Path:
     target_dir = (
         Path(output_dir).expanduser() if output_dir else DOWNLOAD_DIR
     )
-    target_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        target_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        raise DownloaderError(
+            f"Cannot use output folder {target_dir}: {exc}"
+        ) from exc
 
     options = {
         "format": "bestaudio/best",
@@ -172,18 +180,30 @@ def download_audio(url: str, output_dir: Path | str | None = None) -> Path:
     if not info or not info.get("id"):
         raise DownloaderError("Could not identify the downloaded video.")
 
-    video_id = info["id"]
-    suffix = f"[{video_id}].mp3"
+    return _locate_mp3(info, target_dir)
 
+
+def _locate_mp3(info: dict[str, Any], target_dir: Path) -> Path:
+    """Return the MP3 yt-dlp produced, preferring its reported path."""
+    for item in info.get("requested_downloads") or []:
+        reported = item.get("filepath")
+        if reported and Path(reported).suffix == ".mp3":
+            path = Path(reported)
+            if path.is_file():
+                return path
+
+    # Fallback: newest MP3 in the folder carrying this video's ID.
+    suffix = f"[{info['id']}].mp3"
     matches = sorted(
-        path
-        for path in target_dir.glob("*.mp3")
-        if path.name.endswith(suffix)
+        (
+            path
+            for path in target_dir.glob("*.mp3")
+            if path.name.endswith(suffix)
+        ),
+        key=lambda path: (path.stat().st_mtime, path.name),
     )
 
     if not matches:
-        raise DownloaderError(
-            f"MP3 file not found in {target_dir}"
-        )
+        raise DownloaderError(f"MP3 file not found in {target_dir}")
 
     return matches[-1]

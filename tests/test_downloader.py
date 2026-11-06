@@ -263,3 +263,67 @@ def test_download_audio_checks_ffmpeg_first(monkeypatch, env):
     with pytest.raises(DownloaderError, match="no ffmpeg"):
         download_audio(VIDEO_URL)
     assert FakeYDL.created_options is None
+
+
+def test_download_audio_prefers_reported_filepath(env):
+    env.mkdir()
+    reported = env / "Reported [AbCdEf12345].mp3"
+    reported.write_bytes(b"x")
+    (env / "Newer [AbCdEf12345].mp3").write_bytes(b"x")
+    FakeYDL.info = {
+        "id": "AbCdEf12345",
+        "requested_downloads": [{"filepath": str(reported)}],
+    }
+
+    assert download_audio(VIDEO_URL) == reported
+
+
+def test_download_audio_ignores_stale_reported_filepath(env):
+    env.mkdir()
+    real = env / "Title [AbCdEf12345].mp3"
+    real.write_bytes(b"x")
+    FakeYDL.info = {
+        "id": "AbCdEf12345",
+        "requested_downloads": [
+            {"filepath": str(env / "gone [AbCdEf12345].webm")}
+        ],
+    }
+
+    assert download_audio(VIDEO_URL) == real
+
+
+def test_download_audio_fallback_picks_newest(env):
+    import os
+
+    env.mkdir()
+    old = env / "Zzz [AbCdEf12345].mp3"
+    new = env / "Aaa [AbCdEf12345].mp3"
+    old.write_bytes(b"x")
+    new.write_bytes(b"x")
+    os.utime(old, (1, 1))
+
+    assert download_audio(VIDEO_URL) == new
+
+
+def test_download_audio_output_dir_is_a_file(env, tmp_path):
+    blocker = tmp_path / "not_a_dir"
+    blocker.write_text("x")
+
+    with pytest.raises(DownloaderError, match="Cannot use output folder"):
+        download_audio(VIDEO_URL, blocker)
+    assert FakeYDL.created_options is None
+
+
+def test_check_ffmpeg_warns_when_bundled_setup_fails(monkeypatch, caplog):
+    def boom():
+        raise RuntimeError("offline")
+
+    monkeypatch.setattr(downloader.shutil, "which", lambda t: None)
+    monkeypatch.setitem(
+        sys.modules, "static_ffmpeg", types.SimpleNamespace(add_paths=boom)
+    )
+
+    with caplog.at_level("WARNING", logger=downloader.LOGGER.name):
+        with pytest.raises(DownloaderError):
+            check_ffmpeg()
+    assert "offline" in caplog.text

@@ -80,7 +80,9 @@ with Ctrl+C.
 - Live streams and unstarted premieres are refused (see below).
 - Automatic FFmpeg setup: a system FFmpeg/FFprobe on PATH is used if
   present; otherwise the `static-ffmpeg` dependency downloads them once
-  (needs internet) and later runs reuse them.
+  (needs internet) and later runs reuse them. These binaries are fetched
+  over the network without a checksum check; install FFmpeg yourself if
+  that is a concern.
 
 320 kbps is an encoding target; converting a lower-quality source does not
 restore missing audio quality.
