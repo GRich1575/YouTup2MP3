@@ -31,7 +31,7 @@ dependencies = [
 Repository = "https://github.com/GRich1575/YouTup2MP3"
 
 [project.optional-dependencies]
-dev = ["pytest>=8"]
+dev = ["pytest>=9.2.0"]
 
 [project.scripts]
 ytaudio = "ytaudio_downloader.cli:main"
