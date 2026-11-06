@@ -23,7 +23,7 @@ classifiers = [
     "Topic :: Multimedia :: Sound/Audio :: Conversion",
 ]
 dependencies = [
-    "yt-dlp[default]>=2025.1.15",
+    "yt-dlp[default]>=2026.10.21",
     "static-ffmpeg>=2.7",
 ]
 
