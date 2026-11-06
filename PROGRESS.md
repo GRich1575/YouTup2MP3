@@ -9,7 +9,7 @@ CLI (`ytaudio`, also `python -m ytaudio_downloader`) that extracts authorized Yo
 - `.venv\Scripts\Activate.ps1`, then `pip install -e ".[dev]"`.
 - Tests: `python -m pytest -q` (54 passed; yt-dlp and ffmpeg mocked, offline).
 - Real-network tests (opt-in): set `YTAUDIO_TEST_URL` to an authorized non-live video URL, then `python -m pytest -m network -q`. Skipped when unset. No video URLs are stored in the repo (only fake placeholder IDs).
-- CI: `.github/workflows/tests.yml` (offline tests, Ubuntu + Windows, Py 3.10/3.13; also weekly cron and manual dispatch). Earlier runs green. Optional `network` job runs only if repo secret `YTAUDIO_TEST_URL` is set (informational; YouTube may block CI IPs). `.github/dependabot.yml` updates pip + actions weekly.
+- CI: `.github/workflows/tests.yml` (offline tests, Ubuntu + Windows, Py 3.10/3.13; also weekly cron and manual dispatch). Run on `0bc417a` green: all 4 matrix jobs (Ubuntu/Windows x Py 3.10/3.13) passed; `network` job passed but skipped its tests (secret unset). Optional `network` job runs only if repo secret `YTAUDIO_TEST_URL` is set (informational; YouTube may block CI IPs). `.github/dependabot.yml` updates pip + actions weekly.
 
 ## FFmpeg
 - `check_ffmpeg()` uses ffmpeg/ffprobe from PATH if present; otherwise `static-ffmpeg` downloads them on first run (needs internet; no checksum, noted in README). Setup failures are logged as warnings.
@@ -24,12 +24,11 @@ CLI (`ytaudio`, also `python -m ytaudio_downloader`) that extracts authorized Yo
 ## Done (2026-11-06)
 - v1.1.0 features, tests, README, MIT LICENSE, CI, flattened repo, real links removed (see git history).
 - QC pass: output-folder OSError now -> DownloaderError; ffmpeg setup failure logged; Dependabot + weekly/network CI; MP3 lookup uses yt-dlp's reported path. +5 tests.
-- Remote history was rewritten earlier: origin/main is clean (single root commit).
+- Remote history was rewritten earlier: origin/main is clean. QC commit `0bc417a` pushed; backup branch deleted.
 
 ## Open
-1. Local branch `backup-before-rewrite` still holds the old history with a real video ID (never pushed). Delete when no longer needed: `git branch -D backup-before-rewrite`.
-2. GitHub may still serve old commit SHAs by URL until it garbage-collects them (contact support to purge if it matters).
-3. QC changes are committed locally; push status: see `git status -sb`.
+1. GitHub may still serve old rewritten commit SHAs by URL until it garbage-collects them (contact GitHub support to purge if it matters).
+2. Local `backup-before-rewrite` branch deleted and reflog pruned; no local ref holds the real video ID. `main` is pushed and in sync with `origin/main`.
 
 ## Next steps
 Optionally set repo secret `YTAUDIO_TEST_URL`; install Deno; optional features (bitrate flag, batch URLs); ruff/mypy in CI.
