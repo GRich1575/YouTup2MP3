@@ -102,6 +102,23 @@ def test_progress_hook_unknown_total_prints_nothing(capsys):
     assert capsys.readouterr().out == ""
 
 
+def test_format_progress_bounds():
+    assert downloader.format_progress(0, 3).endswith("  0%")
+    assert downloader.format_progress(3, 3).endswith("100%")
+    assert "-" not in downloader.format_progress(5, 3)
+
+
+def test_postprocessor_hook_shows_overall_progress(capsys):
+    hook = downloader.make_postprocessor_hook(2)
+    hook({"status": "started"})
+    hook({"status": "finished"})
+    hook({"status": "started"})
+    hook({"status": "finished"})
+    out = capsys.readouterr().out
+    assert "  0%" in out and " 50%" in out and "100%" in out
+    assert out.endswith("\n")
+
+
 def test_progress_hook_finished(capsys):
     progress_hook({"status": "finished"})
     assert "Converting to MP3" in capsys.readouterr().out

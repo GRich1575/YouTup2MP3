@@ -81,6 +81,47 @@ def progress_hook(data: dict[str, Any]) -> None:
         print("\nDownload complete. Converting to MP3...")
 
 
+BAR_WIDTH = 30
+
+
+def format_progress(done: int, total: int) -> str:
+    """Render a text progress bar with a percentage, e.g. ``[###---] 50%``."""
+    total = max(total, 1)
+    done = min(max(done, 0), total)
+    filled = BAR_WIDTH * done // total
+    bar = "#" * filled + "-" * (BAR_WIDTH - filled)
+    return f"[{bar}] {done * 100 // total:3d}%"
+
+
+def make_postprocessor_hook(total_steps: int):
+    """Return a hook showing overall conversion progress.
+
+    yt-dlp reports no byte-level progress for FFmpeg, so progress is the
+    share of post-processing steps (convert, metadata, thumbnail) finished.
+    """
+    finished = 0
+
+    def hook(data: dict[str, Any]) -> None:
+        nonlocal finished
+        status = data.get("status")
+        if status == "started":
+            print(
+                f"\rConverting: {format_progress(finished, total_steps)}",
+                end="",
+                flush=True,
+            )
+        elif status == "finished":
+            finished += 1
+            end = "\n" if finished >= total_steps else ""
+            print(
+                f"\rConverting: {format_progress(finished, total_steps)}",
+                end=end,
+                flush=True,
+            )
+
+    return hook
+
+
 class YtDlpLogger:
 
     def debug(self, message: str) -> None:
@@ -117,6 +158,22 @@ def download_audio(url: str, output_dir: Path | str | None = None) -> Path:
             f"Cannot use output folder {target_dir}: {exc}"
         ) from exc
 
+    postprocessors = [
+        {
+            "key": "FFmpegExtractAudio",
+            "preferredcodec": AUDIO_FORMAT,
+            "preferredquality": AUDIO_BITRATE_KBPS,
+        },
+        {
+            "key": "FFmpegMetadata",
+            "add_metadata": True,
+            "add_chapters": True,
+        },
+        {
+            "key": "EmbedThumbnail",
+        },
+    ]
+
     options = {
         "format": "bestaudio/best",
         "noplaylist": True,
@@ -130,21 +187,10 @@ def download_audio(url: str, output_dir: Path | str | None = None) -> Path:
         "continuedl": True,
         "writethumbnail": True,
         "progress_hooks": [progress_hook],
-        "postprocessors": [
-            {
-                "key": "FFmpegExtractAudio",
-                "preferredcodec": AUDIO_FORMAT,
-                "preferredquality": AUDIO_BITRATE_KBPS,
-            },
-            {
-                "key": "FFmpegMetadata",
-                "add_metadata": True,
-                "add_chapters": True,
-            },
-            {
-                "key": "EmbedThumbnail",
-            },
+        "postprocessor_hooks": [
+            make_postprocessor_hook(len(postprocessors))
         ],
+        "postprocessors": postprocessors,
         "quiet": True,
         "no_warnings": False,
         "logger": YtDlpLogger(),

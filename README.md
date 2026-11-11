@@ -59,6 +59,7 @@ If PowerShell blocks activation, run this once in that window:
 
     Downloading: 100.0%
     Download complete. Converting to MP3...
+    Converting: [##############################] 100%
 
     Success!
     MP3 saved to: C:\Users\<username>\Downloads\Artist - Title [VIDEO_ID].mp3

@@ -26,6 +26,9 @@ CLI (`ytaudio`, also `python -m ytaudio_downloader`) that extracts authorized Yo
 - QC pass: output-folder OSError now -> DownloaderError; ffmpeg setup failure logged; Dependabot + weekly/network CI; MP3 lookup uses yt-dlp's reported path. +5 tests.
 - Remote history was rewritten earlier: origin/main is clean. QC commit `0bc417a` pushed; backup branch deleted.
 
+## Done (2026-11-11)
+- Conversion progress bar + percent (`make_postprocessor_hook` in `downloader.py`): share of post-processing steps finished (yt-dlp gives no ffmpeg byte progress). 56 tests pass. Uncommitted.
+
 ## Open
 1. GitHub may still serve old rewritten commit SHAs by URL until it garbage-collects them (contact GitHub support to purge if it matters).
 2. Local `backup-before-rewrite` branch deleted and reflog pruned; no local ref holds the real video ID. `main` is pushed and in sync with `origin/main`.
